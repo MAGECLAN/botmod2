@@ -116,6 +116,7 @@ class Modmail(commands.Bot):
         User ID: {self.user.id}
         ---------------
         '''))
+    await bot.change_presence(game=discord.Game(name='DmMeForHelp'), status=discord.Status.idle)	
 
     def overwrites(self, ctx, modrole=None):
         '''Permision overwrites for the guild.'''
@@ -431,6 +432,33 @@ class Modmail(commands.Bot):
             colour = int(colour, 16)
             await roleObj.edit(colour=discord.Colour(value=colour))
             await asyncio.sleep(interval)
+
+    @checks.is_owner()
+    @commands.has_permissions(administrator=True, name='changepresence', pass_context=True, aliases=['advstatus'])
+    async def changepresence(self, ctx, gametype, *, gamename):
+        """
+        gametype should be a numeric value based on the below
+        'playing'   : 0,
+        'listening' : 2,
+        'watching' : 3
+
+        To set streaming look at [p]help set stream
+        """
+
+        if len(gamename.strip()) == 0:
+            return await self.bot.say('cant set an empty status')
+        else:
+            title = gamename.strip()
+
+        gt = int(gametype)
+        if gt not in [0, 2, 3]:
+            return await self.bot.send_cmd_help(ctx)
+        await self.bot.say("Done.")
+
+    async def modify_presence(self, gt: int, title: str):
+        current_status = list(self.bot.servers)[0].me.status
+        game = discord.Game(name=title, type=gt)
+        await self.bot.change_presence(game=game, status=current_status)		
 	
 if __name__ == '__main__':
     Modmail.init()
