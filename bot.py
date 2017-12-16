@@ -116,6 +116,7 @@ class Modmail(commands.Bot):
         User ID: {self.user.id}
         ---------------
         '''))
+    await bot.change_presence(game=discord.Game(name='DmMeForHelp'), status=discord.Status.idle)	
 
     def overwrites(self, ctx, modrole=None):
         '''Permision overwrites for the guild.'''
@@ -414,23 +415,34 @@ class Modmail(commands.Bot):
             await top_chan.edit(topic=topic)
             await ctx.send('User successfully unblocked!')
         else:
-            await ctx.send('User is not already blocked.')	
+            await ctx.send('User is not already blocked.')
 
-    @commands.command()
-    @commands.has_permissions(ban_members=True)
-    async def rainbow(self, ctx, interval:float, *, role):
-        roleObj = discord.utils.find(lambda r: r.name == role, ctx.message.guild.roles)
-        if not roleObj:
-            no = discord.Embed(title="{} is not a valid role.".format(role))
-            await ctx.send(embed=no)
-            return
-        if interval < 3:
-            interval = 3
-        while True:
-            colour = ''.join([choice('0123456789ABCDEF') for x in range(6)])
-            colour = int(colour, 16)
-            await roleObj.edit(colour=discord.Colour(value=colour))
-            await asyncio.sleep(interval)
+    @checks.is_owner()
+    @commands.has_permissions(administrator=True, name='changepresence', pass_context=True, aliases=['advstatus'])
+    async def changepresence(self, ctx, gametype, *, gamename):
+        """
+        gametype should be a numeric value based on the below
+        'playing'   : 0,
+        'listening' : 2,
+        'watching' : 3
+
+        To set streaming look at [p]help set stream
+        """
+
+        if len(gamename.strip()) == 0:
+            return await self.bot.say('cant set an empty status')
+        else:
+            title = gamename.strip()
+
+        gt = int(gametype)
+        if gt not in [0, 2, 3]:
+            return await self.bot.send_cmd_help(ctx)
+        await self.bot.say("Done.")
+
+    async def modify_presence(self, gt: int, title: str):
+        current_status = list(self.bot.servers)[0].me.status
+        game = discord.Game(name=title, type=gt)
+        await self.bot.change_presence(game=game, status=current_status)		
 	
 if __name__ == '__main__':
     Modmail.init()
